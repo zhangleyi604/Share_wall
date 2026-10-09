@@ -1,0 +1,76 @@
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+  background: #f4f1ea;
+  color: #333;
+  height: 100vh;
+  overflow: hidden;
+}
+
+#overlay {
+  position: fixed; inset: 0;
+  background: linear-gradient(135deg, #ffdac1, #a0e7e5);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 100;
+}
+.card { background: #fff; padding: 32px; border-radius: 18px; width: 320px; box-shadow: 0 20px 60px rgba(0,0,0,.15); text-align: center; }
+.card h1 { font-size: 26px; margin-bottom: 6px; }
+.sub { color: #888; font-size: 13px; margin-bottom: 20px; }
+.card label { display: block; text-align: left; font-size: 13px; color: #666; margin: 14px 0 6px; }
+.card input { width: 100%; padding: 10px 12px; border: 1.5px solid #e0ddd5; border-radius: 10px; font-size: 15px; outline: none; }
+.card input:focus { border-color: #ff8fab; }
+#enter { margin-top: 22px; width: 100%; padding: 12px; border: none; border-radius: 10px; background: #ff8fab; color: #fff; font-size: 16px; font-weight: 600; cursor: pointer; }
+#enter:hover { background: #ff7aa0; }
+.tip { margin-top: 14px; font-size: 12px; color: #aaa; }
+
+#topbar {
+  height: 56px; display: flex; align-items: center; justify-content: space-between;
+  padding: 0 16px; background: #fff; box-shadow: 0 2px 10px rgba(0,0,0,.06);
+  position: relative; z-index: 10;
+}
+#topbar .left { display: flex; align-items: center; gap: 14px; font-size: 14px; }
+#topbar .logo { font-size: 20px; }
+.online { color: #3a9d5d; font-size: 13px; }
+#topbar .right { display: flex; gap: 10px; }
+#topbar button { padding: 8px 14px; border: none; border-radius: 9px; background: #333; color: #fff; font-size: 13px; cursor: pointer; }
+#topbar button:hover { opacity: .85; }
+#topbar button.ghost { background: #eee; color: #c0392b; }
+#copyLink { background: #4a90d9; }
+
+#wall {
+  position: relative; width: 100%; height: calc(100vh - 56px); overflow: hidden;
+  background: radial-gradient(circle, rgba(0,0,0,.05) 1px, transparent 1px) 0 0 / 22px 22px, #f4f1ea;
+}
+
+.note {
+  position: absolute; width: 170px; min-height: 120px; border-radius: 10px;
+  padding: 8px 8px 10px; box-shadow: 0 6px 16px rgba(0,0,0,.18);
+  display: flex; flex-direction: column; user-select: none;
+}
+.note.dragging { box-shadow: 0 14px 28px rgba(0,0,0,.28); transform: scale(1.03); cursor: grabbing; z-index: 50; }
+.note-bar { display: flex; align-items: center; gap: 6px; cursor: grab; margin-bottom: 4px; }
+.note-bar .dot { width: 14px; height: 14px; border-radius: 50%; background: rgba(0,0,0,.25); cursor: pointer; flex: 0 0 auto; }
+.note-bar .author { font-size: 11px; color: rgba(0,0,0,.55); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.note-bar .del { border: none; background: rgba(0,0,0,.12); color: #333; width: 18px; height: 18px; border-radius: 5px; cursor: pointer; line-height: 1; font-size: 13px; }
+.note-bar .del:hover { background: rgba(0,0,0,.25); }
+.note-text { flex: 1; font-size: 14px; line-height: 1.4; outline: none; word-break: break-word; white-space: pre-wrap; cursor: text; padding: 2px; }
+.note-text[contenteditable="true"] { background: rgba(255,255,255,.5); border-radius: 6px; }
+
+#board { position: absolute; inset: 0; z-index: 0; touch-action: none; cursor: crosshair; }
+.note { z-index: 1; }
+.note.dragging { z-index: 50; }
+
+#boardTools {
+  position: fixed; left: 14px; bottom: 14px; z-index: 60;
+  background: rgba(255,255,255,.92); backdrop-filter: blur(4px);
+  border-radius: 12px; padding: 10px 12px; box-shadow: 0 6px 18px rgba(0,0,0,.15);
+  display: flex; flex-direction: column; gap: 8px; font-size: 13px; user-select: none;
+}
+.bt-row { display: flex; align-items: center; gap: 8px; }
+.bt-label { color: #888; font-size: 12px; }
+.bcolor { width: 20px; height: 20px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; box-shadow: 0 0 0 1px rgba(0,0,0,.1) inset; }
+.bcolor.active { border-color: #333; }
+.bt-btn { border: none; background: #eee; color: #333; padding: 5px 10px; border-radius: 8px; cursor: pointer; font-size: 12px; }
+.bt-btn:hover { background: #e2e2e2; }
+.bt-btn.active { background: #333; color: #fff; }
+.bt-btn.danger { background: #ffe3e3; color: #c0392b; }

@@ -1,0 +1,12 @@
+{
+  "name": "shared-wall",
+  "version": "1.0.0",
+  "description": "和朋友实时一起贴便签的协作墙（Node + ws）",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
+}
