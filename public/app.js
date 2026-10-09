@@ -104,6 +104,7 @@ function clearWall() { notes.forEach(({ el }) => el.remove()); notes.clear(); }
 
 function addNote(note, isMine) {
   if (notes.has(note.id)) { updateNote(note.id, note); return; }
+  note = { fontSize: 16, bold: false, italic: false, underline: false, align: 'left', ...note };
   const el = document.createElement('div');
   el.className = 'note';
   el.style.left = note.x + 'px';
@@ -115,18 +116,33 @@ function addNote(note, isMine) {
       <span class="author"></span>
       <button class="del" title="删除">×</button>
     </div>
-    <div class="note-text"></div>`;
+    <div class="note-text"></div>
+    <div class="note-fmt">
+      <select class="fmt-size" title="字号">
+        <option value="13">小</option>
+        <option value="16">中</option>
+        <option value="22">大</option>
+        <option value="30">特大</option>
+      </select>
+      <button class="fmt-btn" data-fmt="bold" title="加粗"><b>B</b></button>
+      <button class="fmt-btn" data-fmt="italic" title="斜体"><i>I</i></button>
+      <button class="fmt-btn" data-fmt="underline" title="下划线"><u>U</u></button>
+      <button class="fmt-btn align" data-align="left" title="左对齐">⫷</button>
+      <button class="fmt-btn align" data-align="center" title="居中">≡</button>
+      <button class="fmt-btn align" data-align="right" title="右对齐">⫸</button>
+    </div>`;
   el.querySelector('.author').textContent = note.author || '';
   const textEl = el.querySelector('.note-text');
   textEl.textContent = note.text || '';
+  renderNoteFormat(el, note);
   wall.appendChild(el);
-  notes.set(note.id, { el, data: { ...note } });
+  notes.set(note.id, { el, data: { ...note }, _t: undefined });
 
   const bar = el.querySelector('.note-bar');
   enableDrag(el, bar, note.id);
 
-  textEl.addEventListener('dblclick', () => { textEl.contentEditable = 'true'; textEl.focus(); });
-  textEl.addEventListener('blur', () => { textEl.contentEditable = 'false'; commitText(note.id, textEl.textContent); });
+  textEl.addEventListener('dblclick', () => { textEl.contentEditable = 'true'; el.classList.add('editing'); textEl.focus(); });
+  textEl.addEventListener('blur', () => { textEl.contentEditable = 'false'; el.classList.remove('editing'); commitText(note.id, textEl.textContent); });
   textEl.addEventListener('input', () => {
     notes.get(note.id).data.text = textEl.textContent;
     throttleUpdate(note.id, { text: textEl.textContent });
@@ -139,7 +155,46 @@ function addNote(note, isMine) {
     removeNote(note.id);
   });
 
-  if (isMine) { textEl.contentEditable = 'true'; textEl.focus(); }
+  const fmt = el.querySelector('.note-fmt');
+  fmt.querySelector('.fmt-size').addEventListener('change', (e) => {
+    applyFormat(note.id, el, { fontSize: Number(e.target.value) });
+  });
+  fmt.querySelectorAll('.fmt-btn').forEach((b) => {
+    b.addEventListener('mousedown', (e) => e.preventDefault()); // 避免编辑态失焦
+    b.addEventListener('click', () => {
+      const f = b.dataset.fmt;
+      if (f) applyFormat(note.id, el, { [f]: !notes.get(note.id).data[f] });
+      else if (b.dataset.align) applyFormat(note.id, el, { align: b.dataset.align });
+    });
+  });
+
+  if (isMine) { textEl.contentEditable = 'true'; el.classList.add('editing'); textEl.focus(); }
+}
+
+function renderNoteFormat(el, d) {
+  const t = el.querySelector('.note-text');
+  if (!t) return;
+  t.style.fontSize = (d.fontSize || 16) + 'px';
+  t.style.fontWeight = d.bold ? '700' : '400';
+  t.style.fontStyle = d.italic ? 'italic' : 'normal';
+  t.style.textDecoration = d.underline ? 'underline' : 'none';
+  t.style.textAlign = d.align || 'left';
+  el.querySelectorAll('.fmt-btn').forEach((b) => {
+    const f = b.dataset.fmt;
+    if (f) b.classList.toggle('active', !!d[f]);
+    const a = b.dataset.align;
+    if (a) b.classList.toggle('active', (d.align || 'left') === a);
+  });
+  const sel = el.querySelector('.fmt-size');
+  if (sel) sel.value = String(d.fontSize || 16);
+}
+
+function applyFormat(id, el, patch) {
+  const rec = notes.get(id);
+  if (!rec) return;
+  Object.assign(rec.data, patch);
+  renderNoteFormat(el, rec.data);
+  send({ type: 'note:update', id, patch });
 }
 
 function cycleColor(id, el) {
@@ -162,6 +217,11 @@ function updateNote(id, patch) {
   if (patch.y != null) { rec.el.style.top = patch.y + 'px'; rec.data.y = patch.y; }
   if (patch.text != null) { rec.el.querySelector('.note-text').textContent = patch.text; rec.data.text = patch.text; }
   if (patch.color != null) { rec.el.style.background = patch.color; rec.data.color = patch.color; }
+  let fmtChanged = false;
+  for (const k of ['fontSize', 'bold', 'italic', 'underline', 'align']) {
+    if (patch[k] != null) { rec.data[k] = patch[k]; fmtChanged = true; }
+  }
+  if (fmtChanged) renderNoteFormat(rec.el, rec.data);
 }
 
 function removeNote(id) {
@@ -264,13 +324,21 @@ function addRemotePoint(id, x, y) {
 function endRemote(id) { const s = strokes.get(id); if (s) s.done = true; }
 
 // ---------- 画板工具条 ----------
-document.querySelectorAll('.bcolor').forEach((el) => {
+document.querySelectorAll('.bcolor:not(.custom)').forEach((el) => {
   el.addEventListener('click', () => {
     penColor = el.dataset.color; erasing = false;
     document.querySelectorAll('.bcolor').forEach((c) => c.classList.remove('active'));
     document.getElementById('erase').classList.remove('active');
     el.classList.add('active');
   });
+});
+document.getElementById('customColor').addEventListener('input', (e) => {
+  penColor = e.target.value; erasing = false;
+  document.querySelectorAll('.bcolor').forEach((c) => c.classList.remove('active'));
+  document.getElementById('erase').classList.remove('active');
+  const lbl = document.querySelector('.bcolor.custom');
+  lbl.classList.add('active');
+  lbl.style.background = penColor;
 });
 document.getElementById('erase').addEventListener('click', (e) => {
   erasing = !erasing;

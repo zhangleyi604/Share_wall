@@ -99,7 +99,12 @@ wss.on('connection', (ws) => {
         text: String(n.text || '').slice(0, 500),
         color: String(n.color || '#ffe066').slice(0, 16),
         author: ws.name || '匿名',
-        createdAt: Date.now()
+        createdAt: Date.now(),
+        fontSize: Math.max(10, Math.min(48, Number(n.fontSize) || 16)),
+        bold: !!n.bold,
+        italic: !!n.italic,
+        underline: !!n.underline,
+        align: ['left', 'center', 'right'].includes(n.align) ? n.align : 'left'
       };
       room.notes.set(note.id, note);
       broadcast(ws.roomId, { type: 'note:add', note }, ws);
@@ -114,6 +119,11 @@ wss.on('connection', (ws) => {
       if (typeof msg.patch?.y === 'number') note.y = msg.patch.y;
       if (typeof msg.patch?.text === 'string') note.text = msg.patch.text.slice(0, 500);
       if (typeof msg.patch?.color === 'string') note.color = msg.patch.color.slice(0, 16);
+      if (typeof msg.patch?.fontSize === 'number') note.fontSize = Math.max(10, Math.min(48, msg.patch.fontSize));
+      if (typeof msg.patch?.bold === 'boolean') note.bold = msg.patch.bold;
+      if (typeof msg.patch?.italic === 'boolean') note.italic = msg.patch.italic;
+      if (typeof msg.patch?.underline === 'boolean') note.underline = msg.patch.underline;
+      if (typeof msg.patch?.align === 'string' && ['left', 'center', 'right'].includes(msg.patch.align)) note.align = msg.patch.align;
       broadcast(ws.roomId, { type: 'note:update', id: note.id, patch: msg.patch }, ws);
       return;
     }
